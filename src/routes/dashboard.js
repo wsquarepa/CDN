@@ -6,6 +6,8 @@ const crypto = require('crypto');
 const express = require('express');
 const multer = require('multer');
 
+const sql = require('../util/sql');
+
 const storage = multer.diskStorage({
     destination: path.join(process.cwd(), 'uploads'),
     filename: (req, file, cb) => {
@@ -28,7 +30,9 @@ router.use((req, res, next) => { // AUTH CHECK
 });
 
 router.get('/', function(req, res) {
-    res.render('dashboard', { user: req.user });
+    sql.getFilesByUserId(req.user.id).then(files => {
+        res.render('dashboard', { user: req.user, files });
+    });
 })
 
 router.post('/upload', upload.single('file'), async function(req, res) {
