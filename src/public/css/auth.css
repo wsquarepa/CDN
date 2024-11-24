@@ -7,6 +7,45 @@ body {
     text-align: center;
 }
 
+input {
+    border-radius: 5px;
+    border: 1px solid var(--primary);
+    padding: 5px;
+    outline: none;
+    color: var(--text);
+}
+
+button {
+    border-radius: 5px;
+    border: 1px solid var(--primary);
+    padding: 15px;
+    background-color: var(--primary);
+    color: var(--background);
+    min-width: 100px;
+
+    transition: background-color 0.3s, border 0.3s;
+}
+
+button:hover {
+    background-color: var(--secondary);
+    border: 1px solid var(--secondary);
+    cursor: pointer;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+form input {
+    margin: 10px 0;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--primary);
+    min-width: 200px;
+}
+
 .container h1 {
     font-size: 3rem;
 }

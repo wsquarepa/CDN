@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dashboard | CDN</title>
+        <link rel="stylesheet" href="/static/css/globals.css">
+        <link rel="stylesheet" href="/static/css/dashboard.css">
+    </head>
+    <body>
+        <nav>
+            <a href="/auth/logout">Logout</a>
+        </nav>
+        <div class="container">
+            <h1>Welcome back, <%= user.username %>!</h1>
+            <form action="/dashboard/upload" method="POST" enctype="multipart/form-data">
+                <label for="file">Upload a file</label>
+                <input type="file" name="file" id="file" required>
+                <button type="submit">Upload</button>
+            </form>
+            <div class="files">
+                <% for (let file of files) { %>
+                    <div class="file">
+                        <p><%= file.filename %></p>
+                        <a href="/<%= file.filename %>">Download</a>
+                        <form action="/dashboard/delete" method="POST">
+                            <input type="hidden" name="file" value="<%= file.filename %>">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </body>
+</html>

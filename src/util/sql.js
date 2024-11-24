@@ -6,6 +6,7 @@ const Database = require('better-sqlite3');
 
 const db = new Database('store/store.db');
 db.pragma('foreign_keys = ON');
+db.pragma('journal_mode = WAL');
 
 db.exec(fs.readFileSync(path.join(process.cwd(), 'src', 'schema.sql'), 'utf8'));
 
@@ -17,6 +18,11 @@ function getUserByUsername(username) {
 function insertUser(username, password) {
     const stmt = db.prepare('INSERT INTO users (username, password) VALUES (?, ?)');
     return stmt.run(username, password);
+}
+
+function getFile(userId, filename) {
+    const stmt = db.prepare('SELECT * FROM files WHERE user_id = ? AND filename = ?');
+    return stmt.get(userId, filename);
 }
 
 function getFilesByUserId(userId) {
@@ -31,5 +37,6 @@ function insertFile(userId, filename, filePath, filesize, hash) {
 
 exports.getUserByUsername = getUserByUsername;
 exports.insertUser = insertUser;
+exports.getFile = getFile;
 exports.getFilesByUserId = getFilesByUserId;
 exports.insertFile = insertFile;

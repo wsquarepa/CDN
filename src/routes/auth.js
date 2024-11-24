@@ -38,21 +38,21 @@ passport.use(new LocalStrategy(
 
 const router = express.Router();
 
-router.use((req, res, next) => { // AUTH CHECK
-    if (req.user) {
-        res.redirect('/dashboard');
-    } else {
-        next();
-    }
-});
-
 router.get('/login', function(req, res, next) {
+    if (req.user) {
+        return res.redirect('/dashboard');
+    }
+
     res.render('login', { error: req.session.messages?.[0] });
     req.session.messages = [];
     req.session.save();
 });
 
 router.get('/register', function(req, res) {
+    if (req.user) {
+        return res.redirect('/dashboard');
+    }
+
     res.render('register', { error: req.session.messages?.[0] });
     req.session.messages = [];
     req.session.save();
@@ -88,6 +88,12 @@ router.post('/register/password', async function(req, res) {
     db.insertUser(username, hashedPassword);
 
     res.redirect('/auth/login');
+});
+
+router.get('/logout', function(req, res) {
+    req.logout(() => {
+        res.redirect('/');
+    });
 });
 
 module.exports = router;

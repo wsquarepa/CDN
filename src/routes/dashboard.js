@@ -30,9 +30,9 @@ router.use((req, res, next) => { // AUTH CHECK
 });
 
 router.get('/', function(req, res) {
-    sql.getFilesByUserId(req.user.id).then(files => {
-        res.render('dashboard', { user: req.user, files });
-    });
+    const files = sql.getFilesByUserId(req.user.id)
+
+    res.render('dashboard', { user: req.user, files });
 })
 
 router.post('/upload', upload.single('file'), async function(req, res) {
@@ -50,7 +50,7 @@ router.post('/upload', upload.single('file'), async function(req, res) {
 
     db.insertFile(userId, file.originalname, file.path, fileSize, fileHash);
 
-    res.json({ success: true, url: `/content/${file.filename}?h=${fileHash}` });
+    res.json({ success: true, url: `/content/${userId}/${file.originalname}?h=${fileHash}` });
 })
 
 module.exports = router;

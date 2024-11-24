@@ -1,0 +1,50 @@
+nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    align-items: end;
+}
+
+nav a {
+    display: block;
+    float: right;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+form input {
+    background-color: transparent;
+}
+
+form input[type="file"] {
+    display: none;
+}
+
+form label {
+    background-color: var(--primary);
+    color: var(--background);
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.container {
+    width: 100%;
+    text-align: center;
+}
+
+.container h1 {
+    margin-left: auto;
+}
+
+.files {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-gap: 20px;
+    margin: 20px;
+}
