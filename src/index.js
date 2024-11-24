@@ -34,6 +34,7 @@ app.disable('x-powered-by');
 
 const SqliteStore = require("better-sqlite3-session-store")(session)
 const db = new Database("store/sessions.db");
+db.pragma("journal_mode = WAL");
 
 app.use(
     session({
@@ -45,7 +46,7 @@ app.use(
             }
         }),
         secret: COOKIE_SECRET,
-        resave: true,
+        resave: false,
         saveUninitialized: true,
         name: 'cdn-session-token',
     })
@@ -61,10 +62,12 @@ app.use('/static/css', express.static(path.join(__dirname, 'public', 'css')));
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
 const dashboardRouter = require('./routes/dashboard');
+const contentRouter = require('./routes/content');
 
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
 app.use('/dashboard', dashboardRouter);
+app.use('/content', contentRouter);
 
 // ===== ERROR HANDLING
 
