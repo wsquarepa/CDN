@@ -64,6 +64,13 @@ router.post('/login/password', passport.authenticate('local', {
 }));
 
 router.post('/register/password', async function(req, res) {
+    if (process.env.DISABLE_REGISTRATION) {
+        req.session.messages = ['Registration is disabled.'];
+        req.session.save();
+        res.redirect('/auth/register');
+        return;
+    }
+
     const username = req.body.username;
     const password = req.body.password;
 
