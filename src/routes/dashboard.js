@@ -46,7 +46,7 @@ router.post('/upload', upload.single('file'), async function(req, res) {
 
     db.insertFile(userId, file.originalname, file.path, fileSize, fileHash);
 
-    res.json({ success: true });
+    res.json({ success: true, url: `/content/${file.filename}?h=${fileHash}` });
 })
 
 module.exports = router;
