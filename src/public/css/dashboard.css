@@ -31,6 +31,12 @@ form label {
     padding: 10px;
     border-radius: 5px;
     cursor: pointer;
+    transition: color 0.3s, background-color 0.3s;
+}
+
+form label:hover {
+    background-color: var(--secondary);
+    color: var(--text);
 }
 
 .container {
@@ -47,4 +53,29 @@ form label {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     grid-gap: 20px;
     margin: 20px;
+}
+
+.file p {
+    font-size: 1.2rem;
+}
+
+.file form button {
+    background-color: transparent;
+    margin-top: 10px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: color 0.3s;
+    color: red;
+}
+
+@media (prefers-color-scheme: dark) {
+    .file form button {
+        color: lightcoral;
+    }
+}
+
+.file form button:hover {
+    color: var(--text);
 }

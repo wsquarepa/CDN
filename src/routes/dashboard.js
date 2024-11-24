@@ -43,8 +43,7 @@ router.post('/upload', upload.single('file'), async function(req, res) {
     hash.update(input);
     const fileHash = hash.digest('hex');
 
-    const user = req.user;
-    const userId = user.id;
+    const userId = req.user.id;
 
     const fileSize = fs.statSync(file.path).size;
 
@@ -52,5 +51,21 @@ router.post('/upload', upload.single('file'), async function(req, res) {
 
     res.json({ success: true, url: `/content/${userId}/${file.originalname}?h=${fileHash}` });
 })
+
+router.post('/delete', function(req, res) {
+    const { filename } = req.body;
+
+    const file = sql.getFile(req.user.id, filename);
+
+    if (!file) {
+        res.status(404).send('File not found.');
+        return
+    }
+
+    fs.unlinkSync(file.filepath);
+    db.deleteFile(req.user.id, file.id);
+
+    res.json({ success: true });
+});
 
 module.exports = router;

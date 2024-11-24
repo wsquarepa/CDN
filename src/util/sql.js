@@ -35,8 +35,14 @@ function insertFile(userId, filename, filePath, filesize, hash) {
     return stmt.run(userId, filename, filePath, filesize, hash);
 }
 
+function deleteFile(userId, fileId) {
+    const stmt = db.prepare('DELETE FROM files WHERE user_id = ? AND id = ?');
+    return stmt.run(userId, fileId);
+}
+
 exports.getUserByUsername = getUserByUsername;
 exports.insertUser = insertUser;
 exports.getFile = getFile;
 exports.getFilesByUserId = getFilesByUserId;
 exports.insertFile = insertFile;
+exports.deleteFile = deleteFile;

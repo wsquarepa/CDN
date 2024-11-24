@@ -4,6 +4,8 @@
         <title>Dashboard | CDN</title>
         <link rel="stylesheet" href="/static/css/globals.css">
         <link rel="stylesheet" href="/static/css/dashboard.css">
+
+        <script src="/static/js/dashboard.js" defer></script>
     </head>
     <body>
         <nav>
@@ -11,18 +13,17 @@
         </nav>
         <div class="container">
             <h1>Welcome back, <%= user.username %>!</h1>
-            <form action="/dashboard/upload" method="POST" enctype="multipart/form-data">
+            <form action="/dashboard/upload" method="POST" enctype="multipart/form-data" id="upload">
                 <label for="file">Upload a file</label>
                 <input type="file" name="file" id="file" required>
-                <button type="submit">Upload</button>
             </form>
             <div class="files">
                 <% for (let file of files) { %>
                     <div class="file">
                         <p><%= file.filename %></p>
-                        <a href="/<%= file.filename %>">Download</a>
-                        <form action="/dashboard/delete" method="POST">
-                            <input type="hidden" name="file" value="<%= file.filename %>">
+                        <a href="/content/<%= user.id %>/<%= file.filename %>?h=<%= file.hash %>">Link</a>
+                        <form class="delete-form" action="/dashboard/delete" method="POST">
+                            <input type="hidden" name="filename" value="<%= file.filename %>">
                             <button type="submit">Delete</button>
                         </form>
                     </div>
