@@ -1,0 +1,40 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+}
+
+.container h1 {
+    font-size: 3rem;
+}
+
+.container p {
+    font-size: 1.5rem;
+}
+
+.error {
+    color: red;
+    animation: blink 1.5s infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+    .error {
+        color: lightcoral;
+        animation: blink 1.5s infinite;
+    }
+}
+
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}

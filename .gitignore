@@ -131,4 +131,5 @@ dist
 
 # Databases, Files, and other data
 uploads/
+store/
 *.db
