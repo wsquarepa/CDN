@@ -14,6 +14,11 @@ function getUserByUsername(username) {
     return stmt.get(username);
 }
 
+function insertUser(username, password) {
+    const stmt = db.prepare('INSERT INTO users (username, password) VALUES (?, ?)');
+    return stmt.run(username, password);
+}
+
 function getFilesByUserId(userId) {
     const stmt = db.prepare('SELECT * FROM files WHERE user_id = ?');
     return stmt.all(userId);
@@ -25,5 +30,6 @@ function insertFile(userId, filename, filePath, filesize, hash) {
 }
 
 exports.getUserByUsername = getUserByUsername;
+exports.insertUser = insertUser;
 exports.getFilesByUserId = getFilesByUserId;
 exports.insertFile = insertFile;

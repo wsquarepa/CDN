@@ -52,9 +52,35 @@ router.get('/login', function(req, res, next) {
     req.session.save();
 });
 
+router.get('/register', function(req, res) {
+    res.render('register', { error: req.session.messages?.[0] });
+    req.session.messages = [];
+    req.session.save();
+});
+
 router.post('/login/password', passport.authenticate('local', {
     successRedirect: '/',
     failureRedirect: '/auth/login', failureMessage: true
 }));
+
+router.post('/register/password', async function(req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    const user = await db.getUserByUsername(username);
+
+    if (user) {
+        req.session.messages = ['Username already exists.'];
+        req.session.save();
+        res.redirect('/auth/register');
+        return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    db.insertUser(username, hashedPassword);
+
+    res.redirect('/auth/login');
+});
 
 module.exports = router;
