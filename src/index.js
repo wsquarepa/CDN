@@ -58,6 +58,7 @@ app.use(passport.authenticate('session'));
 // ===== ROUTES
 
 app.use('/static/css', express.static(path.join(__dirname, 'public', 'css')));
+app.use('/static/js', express.static(path.join(__dirname, 'public', 'js')));
 
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
