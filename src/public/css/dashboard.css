@@ -79,3 +79,32 @@ form label:hover {
 .file form button:hover {
     color: var(--text);
 }
+
+.progress {
+    display: none;
+    width: 100%;
+    flex-direction: row;
+}
+
+.progress .bar {
+    width: 100%;
+    background-color: var(--secondary);
+    border-radius: 5px;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-right: 10px;
+    height: 20px;
+    position: relative;
+}
+
+.progress .bar .fill {
+    background-color: var(--primary);
+    width: 0;
+    height: 100%;
+    border-radius: 5px;
+}
+
+.progress .stats {
+    flex-grow: 1;
+    white-space: nowrap;
+}

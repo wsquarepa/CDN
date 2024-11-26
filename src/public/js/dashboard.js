@@ -1,10 +1,16 @@
 (() => {
+    const progressdisplay = document.getElementById('progressdisplay'); // div element
+    const progressbar = document.getElementById('progressbar'); // div element
+    const stats = document.getElementById('stats'); // p element
+
     document.getElementById('upload').querySelector('input').addEventListener('change', async function() {
         const file = this.files[0];
 
         if (file.size > 50 * 1024 * 1024) {
             const chunkSize = 5 * 1024 * 1024; // 5MB
             const totalChunks = Math.ceil(file.size / chunkSize);
+
+            progressdisplay.style.display = 'flex';
 
             const key = Math.random().toString(36).substring(2);
 
@@ -17,6 +23,10 @@
                     + 1, totalChunks))) {
                     return;
                 }
+
+                const progress = Math.round(((i + 1) / totalChunks) * 100);
+                progressbar.style.width = `${progress}%`;
+                stats.textContent = `${progress}%`;
             }
             return;
         }
