@@ -14,7 +14,8 @@ Self-hosted Content Delivery Network backend with easy-to-use interface.
 
 ## Introduction
 
-This project is an authenticated Content Delivery Network (CDN) service that allows registered users to upload, manage, and serve files securely. It uses Node.js, Express, and SQLite for the backend, and EJS for templating.  
+This project is an authenticated Content Delivery Network (CDN) service that allows registered users to upload, manage, and serve files securely. It uses Node.js, Express, and SQLite for the backend, and EJS for templating. It also supports chunking large files (those greater than 50MB) into smaller chunks to conform with service limitations set by, for example, [Cloudflare](https://www.cloudflare.com).
+
 If the intended use case is to have one user to host all the files, you can keep the registration activated, register yourself, and then disable registration (instructions below).  
   
 This project is intended to act as a backend (a file storage) interface. You should link this with an actual content delivery network, like [Cloudflare](https://www.cloudflare.com/), to achieve best performance.
