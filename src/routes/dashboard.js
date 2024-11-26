@@ -8,6 +8,10 @@ const multer = require('multer');
 
 const sql = require('../util/sql');
 
+if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'chunks'))) {
+    fs.mkdirSync(path.join(process.cwd(), 'uploads', 'chunks'), { recursive: true });
+}
+
 const storage = multer.diskStorage({
     destination: path.join(process.cwd(), 'uploads'),
     filename: (req, file, cb) => {
@@ -15,7 +19,12 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+    storage,
+    limits: {
+        fileSize: 50 * 1024 * 1024 // Enforce 50MB default
+    }
+});
 
 const db = require('../util/sql');
 
@@ -51,6 +60,54 @@ router.post('/upload', upload.single('file'), async function(req, res) {
 
     res.json({ success: true, url: `/content/${userId}/${file.originalname}?h=${fileHash}` });
 })
+
+router.post("/upload/chunk", upload.single('file'), async function(req, res) {
+    const { filename, currentChunk, totalChunks } = req.body;
+
+    if (!filename || !currentChunk || !totalChunks) {
+        res.status(400).send('Missing parameters.');
+        return;
+    }
+
+    if (!filename.match(/^[a-zA-Z0-9_.-]+$/)) {
+        res.status(400).send('Invalid filename.');
+        return;
+    }
+
+    const file = req.file;
+    fs.renameSync(file.path, path.join(process.cwd(), 'uploads', 'chunks', `${filename}.${currentChunk}.part`));
+
+    if (currentChunk == totalChunks) {
+        const chunkPaths = fs.readdirSync(path.join(process.cwd(), 'uploads', 'chunks')).filter(f => f.startsWith(filename)).sort();
+
+        const fsName = `${Date.now()}-${filename}`
+
+        const fileStream = fs.createWriteStream(path.join(process.cwd(), 'uploads', fsName));
+
+        for (const chunkPath of chunkPaths) {
+            fileStream.write(fs.readFileSync(path.join(process.cwd(), 'uploads', 'chunks', chunkPath)));
+            fs.unlinkSync(path.join(process.cwd(), 'uploads', 'chunks', chunkPath));
+        }
+
+        await new Promise((resolve, reject) => {
+            fileStream.end(resolve);
+        })
+
+        const hash = crypto.createHash('sha256');
+        const input = fs.readFileSync(path.join(process.cwd(), 'uploads', fsName));
+        hash.update(input);
+        const fileHash = hash.digest('hex');
+
+        const filePath = path.join(process.cwd(), 'uploads', fsName);
+        const size = fs.statSync(filePath).size;
+        
+        db.insertFile(req.user.id, filename, filePath, size, fileHash);
+
+        return res.json({ success: true, url: `/content/${req.user.id}/${filename}?h=${fileHash}` });
+    }
+
+    res.json({ success: true, next: currentChunk + 1 });
+});
 
 router.post('/delete', function(req, res) {
     const { filename } = req.body;
