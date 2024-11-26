@@ -8,23 +8,20 @@ const multer = require('multer');
 
 const sql = require('../util/sql');
 
-if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'chunks'))) {
-    fs.mkdirSync(path.join(process.cwd(), 'uploads', 'chunks'), { recursive: true });
+function hashFile(path) {
+    if (!fs.existsSync(path)) {
+        throw new Error('File does not exist.');
+    }
+
+    const hash = crypto.createHash('sha256');
+    const input = fs.readFileSync(path);
+    hash.update(input);
+    return hash.digest('hex');
 }
 
-const storage = multer.diskStorage({
-    destination: path.join(process.cwd(), 'uploads'),
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
-});
-
-const upload = multer({ 
-    storage,
-    limits: {
-        fileSize: 50 * 1024 * 1024 // Enforce 50MB default
-    }
-});
+function sanitizeFilename(filename) {
+    return filename.replace(/[^a-zA-Z0-9_.-]/g, '_');
+}
 
 const db = require('../util/sql');
 
@@ -44,69 +41,126 @@ router.get('/', function(req, res) {
     res.render('dashboard', { user: req.user, files });
 })
 
-router.post('/upload', upload.single('file'), async function(req, res) {
-    const file = req.file;
-
-    const hash = crypto.createHash('sha256');
-    const input = fs.readFileSync(file.path);
-    hash.update(input);
-    const fileHash = hash.digest('hex');
-
-    const userId = req.user.id;
-
-    const fileSize = fs.statSync(file.path).size;
-
-    db.insertFile(userId, file.originalname, file.path, fileSize, fileHash);
-
-    res.json({ success: true, url: `/content/${userId}/${file.originalname}?h=${fileHash}` });
-})
-
-router.post("/upload/chunk", upload.single('file'), async function(req, res) {
-    const { filename, currentChunk, totalChunks } = req.body;
-
-    if (!filename || !currentChunk || !totalChunks) {
-        res.status(400).send('Missing parameters.');
-        return;
-    }
-
-    if (!filename.match(/^[a-zA-Z0-9_.-]+$/)) {
-        res.status(400).send('Invalid filename.');
-        return;
-    }
-
-    const file = req.file;
-    fs.renameSync(file.path, path.join(process.cwd(), 'uploads', 'chunks', `${filename}.${currentChunk}.part`));
-
-    if (currentChunk == totalChunks) {
-        const chunkPaths = fs.readdirSync(path.join(process.cwd(), 'uploads', 'chunks')).filter(f => f.startsWith(filename)).sort();
-
-        const fsName = `${Date.now()}-${filename}`
-
-        const fileStream = fs.createWriteStream(path.join(process.cwd(), 'uploads', fsName));
-
-        for (const chunkPath of chunkPaths) {
-            fileStream.write(fs.readFileSync(path.join(process.cwd(), 'uploads', 'chunks', chunkPath)));
-            fs.unlinkSync(path.join(process.cwd(), 'uploads', 'chunks', chunkPath));
+router.post('/upload/single', async (req, res) => {
+    multer({ 
+        storage: multer.diskStorage({
+            destination: path.join(process.cwd(), 'uploads'),
+            filename: (req, file, cb) => {
+                cb(null, `${req.user.id}-${Date.now()}-${sanitizeFilename(file.originalname)}`);
+            },
+        }),
+        limits: {
+            fileSize: 50 * 1024 * 1024, // Enforce 50MB default
+            files: 1
+        },
+        fileFilter: (_, file, cb) => {   
+            if (!file) {
+                return cb(new Error('No file uploaded.'), false);
+            }
+    
+            cb(null, true);
+        }
+    }).single('file')(req, res, async function(err) {
+        if (err) {
+            return res.status(400).json({ success: false, message: err.message });
         }
 
-        await new Promise((resolve, reject) => {
-            fileStream.end(resolve);
-        })
+        const file = req.file;
 
-        const hash = crypto.createHash('sha256');
-        const input = fs.readFileSync(path.join(process.cwd(), 'uploads', fsName));
-        hash.update(input);
-        const fileHash = hash.digest('hex');
+        const userId = req.user.id;
+        const originalName = file.originalname;
+        const fileSize = fs.statSync(file.path).size;
+        const fileHash = hashFile(file.path);
 
-        const filePath = path.join(process.cwd(), 'uploads', fsName);
-        const size = fs.statSync(filePath).size;
-        
-        db.insertFile(req.user.id, filename, filePath, size, fileHash);
+        db.insertFile(userId, originalName, file.path, fileSize, fileHash);
 
-        return res.json({ success: true, url: `/content/${req.user.id}/${filename}?h=${fileHash}` });
-    }
+        res.json({ success: true, url: `/content/${userId}/${originalName}?h=${fileHash}` });
+    }); 
+});
 
-    res.json({ success: true, next: currentChunk + 1 });
+router.post('/upload/chunk', async (req, res) => {
+    multer({ 
+        storage: multer.diskStorage({
+            destination: path.join(process.cwd(), 'uploads', 'chunks', req.user.id.toString()),
+            filename: (req, _, cb) => {
+                if (req.query.id == null) {
+                    return cb(new Error('Missing id.'), null);
+                }
+
+                cb(null, `${req.query.id}-${Date.now()}.part`);
+            },
+        }),
+        limits: {
+            fileSize: 10 * 1024 * 1024, // Enforce 10MB default
+            files: 1
+        },
+        fileFilter: (_, file, cb) => {
+            if (!file) {
+                return cb(new Error('No file uploaded.'), false);
+            }
+
+            const { id, filename, currentChunk: ccStr, totalChunks: tcStr } = req.query;
+
+            if (!filename || !id) {
+                return cb(new Error('Missing parameters.'), false);
+            }
+
+            const currentChunk = parseInt(ccStr);
+            const totalChunks = parseInt(tcStr);
+
+            if (isNaN(currentChunk) || isNaN(totalChunks)) {
+                return cb(new Error('Invalid chunk number.'), false);
+            }
+
+            if (currentChunk > totalChunks) {
+                return cb(new Error(`Invalid chunk number. Got ${currentChunk} > ${totalChunks}.`), false);
+            }
+    
+            cb(null, true);
+        }
+    }).single('file')(req, res, async function(err) {
+        if (err) {
+            console.error(err);
+            return res.status(400).json({ success: false, message: err.message });
+        }
+
+        const { id, filename: suggestedFilename, currentChunk: ccStr, totalChunks: tcStr } = req.query;
+
+        const filename = sanitizeFilename(suggestedFilename);
+        const currentChunk = parseInt(ccStr);
+        const totalChunks = parseInt(tcStr);
+
+        if (currentChunk == totalChunks) {
+            const chunkPaths = fs.readdirSync(path.join(process.cwd(), 'uploads', 'chunks', req.user.id.toString())).filter(f => f.startsWith(`${id}-`)).sort();
+
+            if (chunkPaths.length !== totalChunks) {
+                return res.status(500).json({ success: false, message: 'Missing chunks..??', got: chunkPaths.length, expected: totalChunks });
+            }
+
+            const name = `${req.user.id}-${Date.now()}-${filename}`;
+
+            const fileStream = fs.createWriteStream(path.join(process.cwd(), 'uploads', name));
+
+            for (const chunkPath of chunkPaths) {
+                fileStream.write(fs.readFileSync(path.join(process.cwd(), 'uploads', 'chunks', req.user.id.toString(), chunkPath)));
+                fs.unlinkSync(path.join(process.cwd(), 'uploads', 'chunks', req.user.id.toString(), chunkPath));
+            }
+
+            await new Promise((resolve, _) => {
+                fileStream.end(resolve);
+            })
+
+            const filePath = path.join(process.cwd(), 'uploads', name);
+            const fileHash = hashFile(filePath);
+            const size = fs.statSync(filePath).size;
+            
+            db.insertFile(req.user.id, filename, filePath, size, fileHash);
+
+            return res.json({ success: true, url: `/content/${req.user.id}/${filename}?h=${fileHash}` });
+        }
+
+        res.json({ success: true, next: currentChunk + 1 });
+    }); 
 });
 
 router.post('/delete', function(req, res) {

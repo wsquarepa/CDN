@@ -6,12 +6,17 @@
             const chunkSize = 5 * 1024 * 1024; // 5MB
             const totalChunks = Math.ceil(file.size / chunkSize);
 
-            for (let i = 1; i <= totalChunks; i++) {
+            const key = Math.random().toString(36).substring(2);
+
+            for (let i = 0; i < totalChunks; i++) {
                 const start = i * chunkSize;
                 const end = Math.min(file.size, start + chunkSize);
                 const chunk = file.slice(start, end);
 
-                await uploadChunk(chunk, file.name, i, totalChunks);
+                if (!(await uploadChunk(chunk, key, file.name, i 
+                    + 1, totalChunks))) {
+                    return;
+                }
             }
             return;
         }
@@ -19,7 +24,7 @@
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/dashboard/upload', {
+        const response = await fetch('/dashboard/upload/single', {
             method: 'POST',
             body: formData,
         });
@@ -31,23 +36,23 @@
         }
     });
 
-    async function uploadChunk(file, originalName, currentChunk, totalChunks) {
+    async function uploadChunk(file, idempotency, originalName, currentChunk, totalChunks) {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('filename', originalName);
-        formData.append('currentChunk', currentChunk);
-        formData.append('totalChunks', totalChunks);
-
-        const response = await fetch('/dashboard/upload/chunk', {
+        
+        const response = await fetch(`/dashboard/upload/chunk?id=${idempotency}&filename=${originalName}&currentChunk=${currentChunk}&totalChunks=${totalChunks}`, {
             method: 'POST',
             body: formData,
         });
 
         const data = await response.json();
 
-        if (data.success && data.url) {
-            location.reload(); 
-        } 
+        if (data.success) {
+            if (data.url) location.reload(); 
+            return true;
+        }
+
+        return false;
     }
 
     document.querySelectorAll(".delete-form").forEach(form => {
