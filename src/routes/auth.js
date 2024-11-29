@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
@@ -36,6 +37,30 @@ passport.use(new LocalStrategy(
     }
 ));
 
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 6,
+    standardHeaders: true,
+    legacyHeaders: false, 
+    handler: function(req, res, next) {
+        req.session.messages = ['Too many login attempts. Please try again later.'];
+        req.session.save();
+        res.redirect('/auth/login');
+    }
+});
+
+const registerLimiter = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000,
+    max: 2,
+    standardHeaders: true,
+    legacyHeaders: false, 
+    handler: function(req, res, next) {
+        req.session.messages = ['Too many registration attempts. Please try again later.'];
+        req.session.save();
+        res.redirect('/auth/register');
+    }
+});
+
 const router = express.Router();
 
 router.get('/login', function(req, res, next) {
@@ -58,12 +83,12 @@ router.get('/register', function(req, res) {
     req.session.save();
 });
 
-router.post('/login/password', passport.authenticate('local', {
+router.post('/login/password', loginLimiter, passport.authenticate('local', {
     successRedirect: '/',
     failureRedirect: '/auth/login', failureMessage: true
 }));
 
-router.post('/register/password', async function(req, res) {
+router.post('/register/password', registerLimiter, async function(req, res) {
     if (process.env.DISABLE_REGISTRATION) {
         req.session.messages = ['Registration is disabled.'];
         req.session.save();

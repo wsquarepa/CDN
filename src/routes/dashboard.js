@@ -5,6 +5,15 @@ const crypto = require('crypto');
 
 const express = require('express');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    message: '429 - Inhumane upload speed. Please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 const sql = require('../util/sql');
 
@@ -41,7 +50,7 @@ router.get('/', function(req, res) {
     res.render('dashboard', { user: req.user, files });
 })
 
-router.post('/upload/single', async (req, res) => {
+router.post('/upload/single', limiter, async (req, res) => {
     multer({ 
         storage: multer.diskStorage({
             destination: path.join(process.cwd(), 'uploads'),

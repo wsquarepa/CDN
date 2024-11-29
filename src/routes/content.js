@@ -3,12 +3,21 @@ const crypto = require('crypto');
 const mime = require('mime-types');
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 
 const sql = require('../util/sql');
 
+const limiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 1000,
+    message: '429 - Too many requests. Please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
 const router = express.Router();
 
-router.get('/:userId/:filename', function(req, res) {
+router.get('/:userId/:filename', limiter, function(req, res) {
     const { userId, filename } = req.params;
     const queryHash = req.query.h;
 
