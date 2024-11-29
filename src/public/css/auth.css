@@ -48,11 +48,13 @@ form input {
 
 .back {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 20px;
+    left: 30px;
     background-color: transparent;
-    color: var(--primary);
+    color: var(--text);
     text-decoration: none;
+    border: none;
+    font-size: 1.5rem;
 }
 
 .container h1 {
