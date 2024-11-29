@@ -46,6 +46,15 @@ form input {
     min-width: 200px;
 }
 
+.back {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: transparent;
+    color: var(--primary);
+    text-decoration: none;
+}
+
 .container h1 {
     font-size: 3rem;
 }
