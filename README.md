@@ -32,7 +32,7 @@ This project is intended to act as a backend (a file storage) interface. You sho
 1. Clone the repository:
     ```sh
     git clone https://github.com/wsquarepa/CDN.git
-    cd https://github.com/wsquarepa/CDN.git
+    cd CDN
     ```
 
 2. Install dependencies:
