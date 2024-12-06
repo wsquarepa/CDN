@@ -35,7 +35,11 @@ router.get('/:userId/:filename', limiter, function(req, res) {
         return;
     }
     
-    const mimeType = mime.lookup(file.filepath) == 'text/html' ? 'text/plain' : mime.lookup(file.filepath);
+    let mimeType = mime.lookup(file.filepath);
+
+    if (mimeType === 'application/xml' || mimeType === 'text/html' || mimeType === 'image/svg+xml') {
+        mimeType = 'text/plain';
+    }
 
     res.header('Content-Type', mimeType); 
     res.header('Content-Length', file.filesize);
