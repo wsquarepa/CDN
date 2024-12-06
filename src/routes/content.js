@@ -35,7 +35,9 @@ router.get('/:userId/:filename', limiter, function(req, res) {
         return;
     }
     
-    res.header('Content-Type', mime.lookup(file.filepath)); 
+    const mimeType = mime.lookup(file.filepath) == 'text/html' ? 'text/plain' : mime.lookup(file.filepath);
+
+    res.header('Content-Type', mimeType); 
     res.header('Content-Length', file.filesize);
     res.send(fs.readFileSync(file.filepath));
 });
